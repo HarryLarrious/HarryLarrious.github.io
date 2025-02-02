@@ -155,9 +155,21 @@
                 x=x+1
                 for (const element of row) {
                     y=y+1
-                    if (x*50-camera.x > -50 && x*50-camera.x < canvas.width && y*50-camera.y > -50 && y*50-camera.y < canvas.height)
-                    ctx.fillStyle = `rgb(${255 * element}, ${255 * element}, ${255 * element})`;
-                    ctx.fillRect(x*50-camera.x,y*50-camera.y,51,51)
+                    if (x*50-camera.x > -50 && x*50-camera.x < canvas.width && y*50-camera.y > -50 && y*50-camera.y < canvas.height){
+                        ctx.fillStyle = `rgb(${255 * element}, ${255 * element}, ${255 * element})`;
+                        if (element < 0.40) {
+                            ctx.fillStyle = `rgb(${28 * (element+0.4)},${163 * (element+0.4)},${236 * (element+0.4)})`;
+                        }else{
+                            if (element < 0.50) {
+                                ctx.fillStyle = `rgb(${194 * (element+0.5)}, ${178 * (element+0.5)}, ${128 * (element+0.5)})`;
+                            }else{
+                                if (element < 0.70) {
+                                ctx.fillStyle = `rgb(${65 * (element+0.7)}, ${152 * (element+0.7)}, ${10 * (element+0.7)})`;
+                            }
+                            }
+                        }
+                        ctx.fillRect(x*50-camera.x,y*50-camera.y,51,51)
+                    }
                 }
                 y=-1
             }
