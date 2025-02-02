@@ -2,90 +2,230 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Pages testing</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
+        canvas {
+            border: 1px solid black;
+            display: block;
             margin: 0 auto;
-            padding: 20px;
-            text-align: center;
-            background-color: #f0f0f0;
-        }
-        body2 {
-            font-family: Arial, sans-serif;
-            max-width: 400px;
-            margin: 0 auto;
-            padding: 20px;
-            text-align: left;
-        }
-        body3 {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            text-align: right;
-        }
-        h1 {
-            color: #333;
-        }
-        .intro {
-            position: absolute;
-            top: 25px;
-            right: 200px;
-            box-sizing: border-box;
-            width: 800px;
-            height: 200px;
-            background-color: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        .test {
-            position: absolute;
-            top: 250px;
-            right: 200px;
-            background-color: wheat;
-            box-sizing: border-box;
-            width: 300px;  /* Total size, including padding/border */
-            height: 200px;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            
-        }
-        .test2 {
-            position: absolute;
-            top: 250px;
-            right: 700px;
-            background-color: wheat;
-            box-sizing: border-box;
-            width: 300px;  /* Total size, including padding/border */
-            height: 200px;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            
         }
     </style>
 </head>
 <body>
-    <div class="intro">
-        <h1>testing</h1>
-        <p>Test1</p>
-        <p>Test2</p>
-    </div>
+    <canvas id="gameCanvas" width="1600" height="900"></canvas>
+    
+
+
+    <script>
+        document.addEventListener("keydown", keyDownHandler, false);
+        document.addEventListener("keyup", keyUpHandler, false);
+
+        // Get the canvas element
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Game variables
+        let gameLoop;
+        let player = {
+            x: 400,
+            y: 300,
+            velocityx: 0,
+            velocityy: 0,
+            speed: 0.5,
+            width: 50,
+            height: 50,
+            color: 'blue'
+        };
+        let camera = {
+            x: 0,
+            y: 0,
+            velocityx: 0,
+            velocityy: 0,
+        };
+
+        let rightPressed = false;
+        let leftPressed = false;
+        let upPressed = false;
+        let downPressed = false;
+        
+        class PerlinNoise {
+            constructor() {
+                this.permutation = [];
+                for (let i = 0; i < 256; i++) {
+                    this.permutation[i] = Math.floor(Math.random() * 256);
+                }
+                this.permutation = this.permutation.concat(this.permutation);
+            }
+
+            fade(t) {
+                return t * t * t * (t * (t * 6 - 15) + 10);
+            }
+
+            lerp(t, a, b) {
+                return a + t * (b - a);
+            }
+
+            grad(hash, x, y) {
+                const h = hash & 15;
+                const u = h < 8 ? x : y;
+                const v = h < 4 ? y : h == 12 || h == 14 ? x : 0;
+                return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
+            }
+
+            noise(x, y) {
+                const X = Math.floor(x) & 255;
+                const Y = Math.floor(y) & 255;
+
+                x -= Math.floor(x);
+                y -= Math.floor(y);
+
+                const u = this.fade(x);
+                const v = this.fade(y);
+
+                const A = this.permutation[X] + Y;
+                const B = this.permutation[X + 1] + Y;
+
+                return this.lerp(v,
+                    this.lerp(u,
+                        this.grad(this.permutation[A], x, y),
+                        this.grad(this.permutation[B], x - 1, y)
+                    ),
+                    this.lerp(u,
+                        this.grad(this.permutation[A + 1], x, y - 1),
+                        this.grad(this.permutation[B + 1], x - 1, y - 1)
+                    )
+                );
+            }
+        }
+        function generateTerrain(width, height, scale) {
+            const terrain = [];
+            
+            for (let x = 0; x < width; x++) {
+                terrain[x] = [];
+                for (let y = 0; y < height; y++) {
+
+                    let noiseValue = perlin.noise(x / scale, y / scale);
+                    
+                    let terrainHeight = (noiseValue + 1) / 2;
+                    
+                    terrain[x][y] = terrainHeight;
+                }
+            }
+            
+            return terrain;
+        }
+
+        
+
+        function keyDownHandler(e) {
+            if (e.key === "Right" || e.key === "ArrowRight" || e.key === "d") {
+                rightPressed = true;
+            }
+            if (e.key === "Left" || e.key === "ArrowLeft" || e.key === "a") {
+                leftPressed = true;
+            }
+            if (e.key === "Up" || e.key === "ArrowUp" || e.key === "w") {
+                upPressed = true;
+            }
+            if (e.key === "Down" || e.key === "ArrowDown" || e.key === "s") {
+                downPressed = true;
+            }
+        }
+
+        function keyUpHandler(e) {
+            if (e.key === "Right" || e.key === "ArrowRight" || e.key === "d") {
+                rightPressed = false;
+            }
+            if (e.key === "Left" || e.key === "ArrowLeft" || e.key === "a") {
+                leftPressed = false;
+            }
+            if (e.key === "Up" || e.key === "ArrowUp" || e.key === "w") {
+                upPressed = false;
+            }
+            if (e.key === "Down" || e.key === "ArrowDown" || e.key === "s") {
+                downPressed = false;
+            }
+        }
+
+        function displayPerlin(array) {
+            x=-1
+            y=-1
+            for (const row of array) {
+                x=x+1
+                for (const element of row) {
+                    y=y+1
+                    if (x*50-camera.x > -50 && x*50-camera.x < canvas.width && y*50-camera.y > -50 && y*50-camera.y < canvas.height)
+                    ctx.fillStyle = `rgb(${255 * element}, ${255 * element}, ${255 * element})`;
+                    ctx.fillRect(x*50-camera.x,y*50-camera.y,51,51)
+                }
+                y=-1
+            }
+        }
+
+        // Function to draw the player
+        function drawPlayer() {
+            ctx.fillStyle = player.color;
+            ctx.fillRect((player.x-(player.width/2))-camera.x, (player.y-(player.height/2))-camera.y, player.width, player.height);
+        }
+
+        const perlin = new PerlinNoise();
+
+        const terrainWidth = 100;
+        const terrainHeight = 100;
+        const noiseScale = 20;
+        const voxelTerrain = generateTerrain(terrainWidth, terrainHeight, noiseScale);
+
+        // Main game loop
+        function update() {
+            // Clear the canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            displayPerlin(voxelTerrain)
+
+            if (rightPressed) {
+                player.velocityx += player.speed;
+            }
+            if (leftPressed) {
+                player.velocityx -= player.speed;
+            }
+            if (upPressed) {
+                player.velocityy -= player.speed;
+            }
+            if (downPressed) {
+                player.velocityy += player.speed;
+            }
+
+            player.velocityx = player.velocityx*0.9;
+            player.velocityy = player.velocityy*0.9;
+
+            player.x += player.velocityx;
+            player.y += player.velocityy;
+
+            if (camera.x-(canvas.width/2),camera.y-(canvas.height/2) != player.x,player.y) {
+                distance = {
+                    x: (player.x - camera.x-(canvas.width/2))/10,
+                    y: (player.y - camera.y-(canvas.height/2))/10
+                };
+                camera.velocityx = distance.x;
+                camera.velocityy = distance.y;
+            }else{
+                camera.velocityx = 0;
+                camera.velocityy = 0;
+            }
+
+            camera.x += camera.velocityx;
+            camera.y += camera.velocityy;
+
+            // Draw the player
+            drawPlayer();
+
+            // Request the next animation frame
+            gameLoop = requestAnimationFrame(update);
+        }
+
+        // Start the game loop
+        update();
+    </script>
 </body>
-<body2>
-    <div class="test">
-        <h1>testing2</h1>
-        <p>test3</p>
-        <p>test4</p>
-    </div>
-    <div class="test2">
-        <h1>testing3</h1>
-        <p>test5</p>
-        <p>test6</p>
-    </div>
-</body2>
 </html>
